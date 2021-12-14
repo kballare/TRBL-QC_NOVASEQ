@@ -1,10 +1,11 @@
 #!/bin/bash
 
-#sequence pre-processing script 
+#ancient DNA sequence pre-processing script 
+#trim and merge all samples from a NovaSeq Run
 #adapted from Jonas
 #edits Kim Ballare 21-12-14
 
-ids=/redser4/projects/kim/TRBL_list.txt #list of raw sequence filenames
+ids=/redser4/projects/kim/TRBL_list.txt #list of raw sequence filenames ending with S number ex. sample1_S1
 rawdir=/redser4/raw/211026_Duke_NovaSeq_bison_trbb/Johnstone_7226_211018B6 #raw sequence directory
 
 N=2
