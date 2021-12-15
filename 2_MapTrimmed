@@ -1,7 +1,11 @@
 #!/bin/bash
 
-ids=/redser4/personal/jonas/duke_novaseq3/duke_nova3.wood_bison.sample_list.txt
-trim_dir=/redser4/personal/jonas/duke_novaseq3/trimmed_bcs
+#Map Samples from Trimmed Barcodes
+#Adapted from Jonas
+#Kim Ballare 14 Dec 21
+
+ids=/redser4/personal/jonas/duke_novaseq3/duke_nova3.wood_bison.sample_list.txt #sample IDs (DONT include illumina S number)
+trim_dir=/redser4/personal/jonas/duke_novaseq3/trimmed_bcs. #directory with merged/adapter trimmed reads - assumes each sample has a subdirectory with seqprep output
 REFERENCE=/scratch3/jonas/genomes/ARS-UCD1.2_Btau5.0.1Y.fa.gz #bigser
 
 n=12
