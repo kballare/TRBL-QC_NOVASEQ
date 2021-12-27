@@ -1,0 +1,53 @@
+#!/bin/bash
+
+#Map Samples from Trimmed Barcodes
+#Adapted from Jonas
+#Kim Ballare 14 Dec 21
+
+ids=/redser4/personal/jonas/duke_novaseq3/duke_nova3.wood_bison.sample_list.txt #sample IDs (DONT include illumina S number)
+trim_dir=/redser4/personal/jonas/duke_novaseq3/trimmed_bcs. #directory with merged/adapter trimmed reads - assumes each sample has a subdirectory with seqprep output
+REFERENCE=/scratch3/jonas/genomes/ARS-UCD1.2_Btau5.0.1Y.fa.gz #bigser
+
+n=12
+n_half=6
+
+while read -r samp; do
+    
+    mkdir -p ${samp} && cd ${samp} || exit
+    for lane in {L001,L002,L003,L004}; do
+    
+        merged_read_group='@RG\tID:'${samp}'_'${lane}'_merged\tSM:'${samp}'\tPL:illumina\tLB:'${samp}'\tPU:'${samp}''
+        unmerged_read_group='@RG\tID:'${samp}'_'${lane}'_unmerged\tSM:'${samp}'\tPL:illumina\tLB:'${samp}'\tPU:'${samp}''
+        
+        # updated parameters to edit distance/gap penalty/disable seeding
+        bwa samse ${REFERENCE} \
+            <(bwa aln -l 16500 -n 0.01 -o 2 -t ${n} ${REFERENCE} ${trim_dir}/${samp}/${samp}_${lane}_merged.fastq.gz) \
+            ${trim_dir}/${samp}/${samp}_${lane}_merged.fastq.gz -r ${merged_read_group} | samtools sort -@ ${n} -o ${samp}_${lane}_merged.bam
+
+
+        bwa sampe ${REFERENCE} \
+            <(bwa aln -l 16500 -n 0.01 -o 2 -t ${n_half} ${REFERENCE} ${trim_dir}/${samp}/${samp}_${lane}_R1_unmerged.fastq.gz) \
+            <(bwa aln -l 16500 -n 0.01 -o 2 -t ${n_half} ${REFERENCE} ${trim_dir}/${samp}/${samp}_${lane}_R2_unmerged.fastq.gz) \
+            ${trim_dir}/${samp}/${samp}_${lane}_R1_unmerged.fastq.gz ${trim_dir}/${samp}/${samp}_${lane}_R2_unmerged.fastq.gz \
+            -r ${unmerged_read_group} | samtools sort -@ ${n} -o ${samp}_${lane}_unmerged.bam
+
+        
+        samtools flagstat -@ ${n} ${samp}_${lane}_merged.bam > ${samp}_${lane}_merged.flagstat.txt
+        samtools flagstat -@ ${n} ${samp}_${lane}_unmerged.bam > ${samp}_${lane}_unmerged.flagstat.txt
+    done
+    
+    # just treating as implicit that the final bam is composed of both merged and unmerged reads- not indicating this with special filename handle like '_all' or something
+    # essentially just viewing merged and unmerged fq/bams as temporary files to generated the combined bam
+    # eventually should add option to merge/not merge and treat separately
+    samtools merge -@ ${n} ${samp}.bam ${samp}_{L001,L002,L003,L004}_merged.bam ${samp}_{L001,L002,L003,L004}_unmerged.bam && rm ${samp}*merged.bam ${samp}*unmerged.bam
+
+    samtools flagstat -@ ${n} ${samp}.bam > ${samp}.flagstat.txt 
+    samtools stats -@ ${n} ${samp}.bam > ${samp}.stats.txt
+
+    java -jar -Xmx4g -Djava.io.tmpdir=$(pwd)/tmp -XX:ParallelGCThreads=8 $PICARD MarkDuplicates \
+            INPUT="${samp}".bam OUTPUT="${samp}".rmdup.bam METRICS_FILE="${samp}".markdup_metrics.txt \
+            REMOVE_DUPLICATES=true MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=800 VALIDATION_STRINGENCY=LENIENT TMP_DIR=$(pwd)/tmp &
+    
+    cd ..
+
+done < $ids
