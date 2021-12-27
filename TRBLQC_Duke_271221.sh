@@ -28,7 +28,7 @@ MIA_REFERENCE_SEQUENCE=/redser4/genomes/mitogenomes/Agelaius_phoeniceus_NC_01880
 REFERENCE_NAME=CCGP_TRBL  # To allow naming of files, if multiple references are to be used
 MIA_REFERENCE_NAME=AGPH  # To allow naming of files, if multiple references are to be used
 GET_SAMPLES=/redser4/projects/kim/get_samplelist_reps-4.sh
-CALC_STATS=/EDITHERE.R
+CALC_STATS=/redser4/projects/kim/scripts/alisa.R
 
 ### Initial setting up of directories
 cd ${RAW_READ_DIRECTORY}
